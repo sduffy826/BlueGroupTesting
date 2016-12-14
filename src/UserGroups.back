@@ -1,0 +1,148 @@
+
+/*
+ * Members.java v3.0.6.0 - SLAPHAPI Sample Program
+ *
+ * Licensed Materials - Property of IBM
+ * BluePages Java Toolkit - com.ibm.bluepages.samples.Members
+ * (C) Copyright IBM Corporation 1998-2015. All Rights Reserved.
+ * US Government Users Restricted Rights - Use, duplication, or 
+ * disclosure restricted by GSA ADP Contract with IBM Corporation.
+ *
+ * Enterprise Directory Team
+ * IBM Global Services
+ *
+ */
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.ibm.bluepages.BluePages;
+import com.ibm.bluepages.slaphapi.LDAPAttribute;
+import com.ibm.bluepages.slaphapi.LDAPEntry;
+import com.ibm.bluepages.slaphapi.SLAPHAPIResults;
+
+/**
+ * <code>Members</code> retrieves the DNs of the members of the BlueGroups
+ * that match the specified group name. 
+ * 
+ * <p>Syntax: <code>java com.ibm.bluepages.samples.Members emailAddr
+ * [-u APILOCATORURL] [-d]</code></p>
+ * 
+ * <p>Example: <code>java com.ibm.bluepages.samples.Members MQ* -d</code></p> 
+ * <p>Example: <code>java com.ibm.bluepages.samples.Members mygroup -u 
+ * https://bluepages.ibm.com/BpHttpApisv3/apilocator</code></p>
+ * 
+ * @version 3.0.6.0 - Created on January 18, 2006.<br /><i>Last updated on 
+ * March, 9, 2015.</i>
+ * @author Enterprise Directory Team<br />IBM Global Services<br />
+ * edirect@us.ibm.com
+ *
+ */
+public class UserGroups {
+    public static void main(String args[]) {
+        //
+        // Check the arguments.
+        //
+        if (args.length < 1) {
+            System.err.println("Usage: java com.ibm.bluepages.samples.UserGroups " +
+                "EMAILADDR [-u APILOCATORURL] [-d]");
+            return;
+        }
+        
+        String emailAddr = args[0];
+        
+        // Check other arguments, if specified.
+        for (int i = 0; i < args.length; i++) {
+            if (args[i].equalsIgnoreCase("-u")) {
+                // If specified, set API locator URL 
+                // before calling BluePages functions.
+                if (++i < args.length) {
+                    System.setProperty(BluePages.HTTP_API_LOCATOR_URL, args[i]);    // V3.0.6.0
+                 }
+            } else if (args[i].equalsIgnoreCase("-d")) {
+                // Turn on the debug..
+                System.setProperty(BluePages.DEBUG, "true");                        // V3.0.6.0
+            }
+        }
+        
+        // Prepare the SLAPHAPI search parameters..
+        Map<String, Object> parms = new HashMap<String, Object>();
+     //   parms.put(BluePages.SLAPHAPI_SEARCH_BASE, "base");        
+        
+        // URL-encode the specified SLAPHAPI/LDAP filter and call the SLAPHAPI 
+        // method to retrieve the BP data.     
+        
+       // http://bluepages.ibm.com/BpHttpApisv3/slaphapi?ibmperson/mail=ndaher@us.ibm.com.list/bytext?ibm-allgroups
+        
+                
+        // URL-encode the specified UID and construct the SLAPHAPI filter..
+        String filter = "ibmperson/(mail=ndaher@us.ibm.com)"; // .list/bytext?ibm-allgroups";
+                
+        // Retrieve these attributes only.
+        String[] attributes = { "ibm-allgroups" }; //"cn", "ou", "o" } ;
+                        
+        // Prepare the SLAPHAPI search parameters..
+        /* Map<String, Object> parms = new HashMap<String, Object>();
+        parms.put(BluePages.SLAPHAPI_SEARCH_PRINTABLE, "false");
+        parms.put(BluePages.SLAPHAPI_SEARCH_ENCODING, "ISO-8859-1");  
+        */     
+        //
+        // Call SLAPHAPI to retrieve the directory data references by the
+        // specified filter.
+        //
+        SLAPHAPIResults results = BluePages.callSLAPHAPI(filter, attributes, parms);
+                
+        // SLAPHAPIResults results = BluePages.callSLAPHAPI(filter);
+        
+                
+        // Make sure the method didn't fail unexpectedly.
+        if (!results.succeeded()) {
+            System.err.println("Error: " + results.getStatusMsg());
+            return;
+        }
+        
+        // Check to see whether SLAPHAPI returned any results.
+        if (results.getSize() == 0) {
+            System.err.println("Error: SLAPHAPI search returned no results.");
+            return;
+        }
+        
+        String attrID;            // Attribute Name
+        LDAPEntry entry;          // Hashtable to store LDAPAttribute instances
+        LDAPAttribute attribute;  // Vector to store the values
+        
+        // Display SLAPHAPI results.
+        
+        // Get an enumerator for the DNs found in the search results.
+        // Iterate through DNs and get attributes for each DN.
+        for (Enumeration<LDAPEntry> e = results.getEntries(); e.hasMoreElements(); ) {
+            entry = e.nextElement();
+            
+            // Get the CN attribute which contains the name of the group..
+        //    attribute = entry.getAttribute("cn");
+            
+            // Display the name of the group..
+        //    System.out.println("Group: " + attribute.getValue());
+            
+            // Remove "cn" from the entry so it isn't displayed twice.. 
+        //    entry.removeAttribute("cn");
+            
+            // Get an enumerator for the attributes returned for the current DN.
+            // Iterate through attributes and get values for each attribute.
+            for (Enumeration<LDAPAttribute> a = entry.getAttributes(); a.hasMoreElements(); ) {
+                // Get the attributes.
+                attribute = a.nextElement();
+                
+                // Get attribute name.
+                attrID = attribute.getID();
+                
+                // Get the values for the current attribute in an enumerator.
+                // Iterate through values and display each.
+                for (Enumeration<String> v = attribute.getValues(); v.hasMoreElements(); ) {
+                    System.out.println("    " + attrID + ": " + v.nextElement());
+                }
+            }
+            System.out.println(" ");
+        }
+    }
+}

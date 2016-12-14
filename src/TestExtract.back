@@ -1,0 +1,44 @@
+import java.util.*;
+import com.ibm.swat.password.ReturnCode;
+import com.ibm.swat.password.cwa2;
+
+//------
+
+public class TestExtract {
+  public static void main(String[] args) {
+
+    System.setProperty(cwa2.DEBUG, "true");
+    System.setProperty(cwa2.TRACE, "true");
+
+    cwa2 CWA2 = new cwa2("bluepages.ibm.com","bluegroups.ibm.com");
+
+    CWA2.setMemberFilterSize(20);
+    CWA2.setUseThreaded(true);
+
+    String groupName = "emea_bpso_ro";
+
+    Vector<String> members = new Vector<String>();
+    ReturnCode rc = null;
+
+    System.out.println(
+    "-------------------- CALLING LISTMEMBERS --------------------");
+
+    rc = CWA2.listMembers(groupName, members);
+    System.out.println("RC= " + rc);
+
+    System.out.println(
+    "---------------------- LISTING MEMBERS ----------------------");
+
+    if (rc.getCode() == 0) {
+      for (int i = 0, n = members.size(); i < n; i++) {
+        String attr = members.elementAt(i);
+        System.out.println(i + ". " + attr);
+      }
+    }
+    else {
+      System.err.println(rc);
+    }
+  }
+}
+// ---
+

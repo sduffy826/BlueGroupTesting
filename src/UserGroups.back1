@@ -1,0 +1,334 @@
+
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Vector;
+
+import com.ibm.bluepages.BluePages;
+import com.ibm.bluepages.slaphapi.LDAPAttribute;
+import com.ibm.bluepages.slaphapi.LDAPEntry;
+import com.ibm.bluepages.slaphapi.SLAPHAPIResults;
+import com.ibm.swat.password.ReturnCode;
+import com.ibm.swat.password.cwa2;
+
+/*
+ * 
+ * <p>Example<code>  UserGroups ugObj = new UserGroups(false)
+ *                   String userDn = ugObj.getDNForEmail(_emailAddrString);</code></p>   
+ */
+public class UserGroups {
+  private boolean debugIt;
+  private cwa2 cwa2Obj;
+  
+  /** 
+   * <p>Perform object initialization, called from the constructors
+   * it initializes the cwa2 object used throughout this class
+   * and sets debug/trace based on value of 'debugIt'.</p>
+   */
+  private void initIt() {
+    if (debugIt) {
+      System.setProperty(cwa2.DEBUG, "true");
+      System.setProperty(cwa2.TRACE, "true");
+    }
+    
+    cwa2Obj = new cwa2("bluepages.ibm.com","bluegroups.ibm.com");
+
+    cwa2Obj.setMemberFilterSize(100);
+    cwa2Obj.setUseThreaded(true);
+  }
+
+  /** 
+   * <p>Constructor without args, sets debugging flag off and
+   * calls init method</p>
+   */
+  public UserGroups() {
+    debugIt = false;
+    initIt();
+  }
+  
+  /** 
+   * <p>Constructor with argument identifying debugging flag, it 
+   * sets flag and calls init method</p>
+   * @param _debugIt  <code>true</code> if want debugging/trace turned
+   *                  on <code>false</code> if don't want it
+   */
+  public UserGroups(boolean _debugIt) {
+    debugIt = _debugIt;
+    initIt();
+  }
+  
+  /** 
+   * <p>Return a string representing the distinguished name
+   * for a given email address.</p>
+   *
+   * @param _emailAddr  the email address to search bluepages for
+   * @return            a <code>String</code> representing the 
+   *                    distinguished name <code>""</code> if not found
+   */
+  public String getDNForEmail(String _emailAddr) {    
+    if (_emailAddr.isEmpty() == false) {
+      if (debugIt ){ System.setProperty(BluePages.DEBUG,"true"); }
+      
+      LDAPEntry thePerson = getPersonForEmail(_emailAddr);
+      if (thePerson != null) {
+        return thePerson.getDN();        
+      }
+    }
+    return "";
+  }
+  
+  /** 
+   * <p>Method is a wrapper for the call when we want to get the
+   * LDAPEntry for a given serial and country code (cnum); the caller
+   * can interrogate the ldap entries attributes</p>
+   *
+   * @param _cnum         cnum to search for (cnum=serial || countrycode)
+   * @return              <code>LDAPEntry</code> representing person found
+   *                      <code>null</code> if not found
+   * @author              S. Duffy
+   * @since               2016-12-12
+   * @see                 LDAPEntry
+   */
+  public LDAPEntry getPersonForCnum(String _cnum) {
+    return getPersonEntryForKey("uid",_cnum);
+  }
+  
+  /** 
+   * <p>Another wrapper for the call when we want to get the
+   * LDAPEntry for a given email address.</p>
+   *
+   * @param _emailAdddr   <code>String</code> representing email address
+   *                      to search for.
+   * @return              <code>LDAPEntry</code> representing person found
+   *                      <code>null</code> if not found
+   * @author              S. Duffy
+   * @since               2016-12-12
+   * @see                 LDAPEntry
+   */
+  public LDAPEntry getPersonForEmail(String _emailAddr) {
+    return getPersonEntryForKey("mail",_emailAddr);
+  }
+  
+  /** 
+   * <p>This method returns a person record (LDAPEntry) for a given
+   * key.  Note: I only look at the first entry found so you should
+   * use something that is unique to one person (i.e. uid (cnum),
+   * mail (email address)).</p>
+   *
+   * @param _searchKey    the tag we should search for i.e. <code>uid</code>
+   * @param _searchValue  the search value i.e. <code>SERIAL897</code>
+   * @return              <code>LDAPEntry</code> representing person found
+   *                      <code>null</code> if not found
+   * @author              S. Duffy
+   * @since               2016-12-12
+   * @see                 LDAPEntry
+   */  
+  public LDAPEntry getPersonEntryForKey(String _searchKey, String _searchValue) {
+    LDAPEntry thePersonEntry = null;
+    if (_searchKey.isEmpty() == false && _searchValue.isEmpty() == false) {
+      if (debugIt ){ System.setProperty(BluePages.DEBUG,"true"); }
+      
+      // Empty parms for this call
+      String filter = "ibmperson/("+_searchKey+"=" + _searchValue +")";  // .list/bytext?ibm-allgroups (for webcall)
+      
+      // Make bluepages call
+      SLAPHAPIResults results = BluePages.callSLAPHAPI(filter);
+      // Make sure the method didn't fail unexpectedly.
+      if (results.succeeded()) {               
+        // Check to see whether SLAPHAPI returned any results.
+        if (results.getSize() > 0) {
+          thePersonEntry = results.getEntry();
+          if (debugIt) {
+            // Show all the attributes                       
+            String attrID;            // Attribute Name
+            LDAPAttribute attribute;  // Vector to store the values
+                        
+            for (Enumeration<LDAPAttribute> a = thePersonEntry.getAttributes(); a.hasMoreElements(); ) {
+              // Get the attributes.
+              attribute = (LDAPAttribute)a.nextElement();
+              
+              // Get attribute name.
+              attrID = attribute.getID();
+              
+              // Get the values for the current attribute in an enumerator.
+              // Iterate through values and display each.
+              for (Enumeration<String> v = attribute.getValues(); v.hasMoreElements(); ) {
+                  System.out.println("    " + attrID + ": " + v.nextElement());
+              }
+            }
+          }
+        }
+      }
+    }
+    return thePersonEntry;
+  }
+  
+  /** 
+   * <p>Get group owner for a given group</p>
+   *
+   * @param _group   <code>String</code> the group name
+   * @return         <code>String</code> the owner
+   * @author         S. Duffy
+   * @since          2016-12-12 
+   */
+  public String getGroupOwner(String _group) {
+    return cwa2Obj.getOwner(_group);
+  }
+  
+  // Couldn't ever get to return anything so wouldn't use unless you
+  // know there's an admin for a certain group (suspect there weren't
+  // any admin's defined for groups I checked)
+  /** 
+   * <p>Get the group administrators for a group, I couldn't ever
+   * get values so not sure if it's the data in the system or something
+   * wrong with the api... do more research</p>
+   *
+   * @param _group   <code>String</code> the group name
+   * @return         <code>String</code> the owner
+   * @author         S. Duffy
+   * @since          2016-12-12 
+   */
+  public Vector<String> getGroupAdmins(String _group) {
+    Vector<String> list = new Vector<String>();
+    ReturnCode theRc = cwa2Obj.listAdmins(_group,3,list,"mail");
+    return list;
+  }
+      
+  // Didn't get to work, but left in case you want to research
+  // why never got admin's
+  /** 
+   * <p>Get the groups the email address passed in is an administrator
+   * of</p>
+   *
+   * @param _emailAddr  <code>String</code> the persons email address
+   * @return         <code>Vector<String></code> list of groups person is admin of
+   * @author         S. Duffy
+   * @since          2016-12-12 
+   */
+  public Vector<String> getGroupsUserIsAdminOf(String _emailAddr) {
+    Vector<String> adminGroup = new Vector<String>();
+
+    LDAPEntry thePerson = getPersonForEmail(_emailAddr);
+    String personUid = thePerson.getAttribute("uid").getValue();
+    
+    boolean didCall = false;
+    Vector<String> groupsIn = getGroupsUserIsIn(_emailAddr); 
+    for (String grp: groupsIn) {
+      Vector<String> admins = getGroupAdmins(grp);
+      for (String adminEmails : admins) {
+        if (adminEmails.compareToIgnoreCase(_emailAddr) == 0) {
+          adminGroup.add(grp);
+        }
+      }
+    }
+         
+    for (String grp: groupsIn) {
+      // This is just for debugging
+      if (grp.startsWith("RS") ) {
+        System.out.println(grp);
+        if (didCall == false) {
+          String dd = getGroupAdmins(grp);
+          didCall = true;
+        }
+      }
+      System.out.println("Group: " + grp + " owner: "); //+getGroupOwner(grp,cwa2Obj));
+      
+      if (cwa2Obj.isGroupAdmin(personUid,grp)) {
+        adminGroup.add(grp);
+        System.out.println("Admin: " + grp); 
+      }
+      else {
+        System.out.println("Not Admin: " + grp);
+      }
+    }
+    return adminGroup;
+  }
+  
+  // Get members for a group, we'll default to return email address, if they
+  // want a different attribute they'll call the method with different signature
+  public Vector<String> getGroupMembers(String _groupName) {
+    return getGroupMembers(_groupName,"mail");  // Default to returning email address
+  }
+  
+  // Get group members, this one the user passes in the bluepages attribute they
+  // want returned (look at bp schema for valid attributes (i.e. callupName))
+  public Vector<String> getGroupMembers(String _groupName, String _bpAttribute) {
+    Vector<String> memberList = new Vector<String>();
+    ReturnCode rc = cwa2Obj.listMembers(_groupName, memberList, _bpAttribute); //"callupName");
+    
+    return memberList;    
+  }
+  
+  // Return a vector of groups that the user (email) is in  
+  public Vector<String> getGroupsUserIsIn(String _emailAddr) {
+    Vector<String> groups = getFullGroupsUserIsIn(_emailAddr);
+    
+    for(int i=0; i < groups.size(); i++) {
+      // Replace vector element with just the rdn 'cn' value
+      groups.set(i,LdapHelper.getRdnValue(groups.get(i),"cn"));
+    }
+    return groups;
+  }
+    
+  // This returns the full DN of the groups the user is in
+  public Vector<String> getFullGroupsUserIsIn(String _emailAddr) {
+    Vector<String> groupsIn = new Vector<String>();
+    if (_emailAddr.isEmpty() == false) {
+      if (debugIt ){ System.setProperty(BluePages.DEBUG,"true"); }
+      
+      // Empty parms for this call
+      Map<String, Object> parms = new HashMap<String, Object>();
+      String filter = "ibmperson/(mail=" + _emailAddr +")";  // .list/bytext?ibm-allgroups (for webcall)
+      String[] attributes = { "ibm-allgroups" };             // elements to pull
+      
+      // Make bluepages call
+      SLAPHAPIResults results = BluePages.callSLAPHAPI(filter, attributes, parms);
+      // Make sure the method didn't fail unexpectedly.
+      if (results.succeeded()) {               
+        // Check to see whether SLAPHAPI returned any results.
+        if (results.getSize() > 0) {
+          String attrID;
+          LDAPEntry entry;          // Hashtable to store LDAPAttribute instances
+          LDAPAttribute attribute;  // Vector to store the values
+        
+          // Iterate over values
+          for (Enumeration<LDAPEntry> e = results.getEntries(); e.hasMoreElements(); ) {
+            entry = e.nextElement();
+            
+            // Get an enumerator for the attributes returned for the current entry.
+            // Iterate through attributes and get values for each attribute.
+            for (Enumeration<LDAPAttribute> a = entry.getAttributes(); a.hasMoreElements(); ) {
+              // Get the attributes.
+              attribute = a.nextElement();
+                
+              // Get attribute name.
+              attrID = attribute.getID();
+                
+              // Get the values for the current attribute in an enumerator.
+              // Iterate through values and display each.
+              for (Enumeration<String> v = attribute.getValues(); v.hasMoreElements(); ) {
+                groupsIn.add(v.nextElement());
+              }
+            }           
+          }
+        }
+      } 
+    }
+    return groupsIn;
+  }
+  
+  // Return list of groups the email address passed in is the owner of
+  public Vector<String> getGroupsUserIsOwnerOf(String _emailAddr) {
+    Vector<String> ownerOf = new Vector<String>();
+    String userDn = getDNForEmail(_emailAddr);
+
+    Vector<String> groupsIn = getGroupsUserIsIn(_emailAddr); 
+    for (String grp: groupsIn) {      
+      String theOwner = getGroupOwner(grp);
+      if (userDn.equalsIgnoreCase(theOwner)) {
+        ownerOf.add(grp);
+      }
+    }
+    return ownerOf;
+  }
+}
