@@ -1,3 +1,5 @@
+package com.ibm.bluegroup.spd;
+
 
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -339,6 +341,30 @@ public class UserGroups {
     return cwa2Obj.getOwner(_group);
   }
       
+  /** 
+   * <p>Get group owners email address for a group</p>
+   *
+   * @param _group   <code>String</code> the group name
+   * @return         <code>String</code> the email address of the owner, null if not found
+   * @author         S. Duffy
+   * @since          2016-12-12 
+   */
+  public String getGroupOwnersEmail(String _group) {
+    // Get the distinguished name for group owner
+    String dnOfOwner = getGroupOwner(_group);
+    String rtnValue = null;
+    // Pull the uid value out of the RDN value.
+    String uid = LdapHelper.getRdnValue(dnOfOwner,"uid");
+    if (uid.length() > 0) {     
+      LDAPEntry thePerson = getPersonForCnum(uid);
+      if (thePerson != null) {
+        rtnValue = thePerson.getAttribute("mail").getValue();
+      }
+    }
+    return rtnValue;
+  }
+    
+  
   /** 
    * <p>Get the groups the email address passed in is an administrator
    * of; this is really a wrapper for the getGroupsAdminOrOwnerOf method</p>

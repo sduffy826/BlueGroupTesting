@@ -8,6 +8,7 @@ import java.util.Vector;
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.*;
 
+import com.ibm.bluegroup.spd.UserGroups;
 import com.ibm.bluepages.slaphapi.LDAPEntry;
 
 import java.util.*;
@@ -31,7 +32,9 @@ public class TestExtract {
     CWA2.setUseThreaded(true);
 
     String groupName = "emea_bpso_ro";
-    //groupName = "RS_IW_P_USER_ASSET_MANAGEMENT";
+    String email2Check = "hotdog@us.ibm.com";
+    groupName = "RS_IW_P_USER_ASSET_MANAGEMENT";
+    groupName = "PRISM-User-BCRS-WW";
 
     Vector<String> members = new Vector<String>();
     ReturnCode rc = null;
@@ -100,8 +103,8 @@ public class TestExtract {
     
     System.out.println(
       "---------------------- getGroupsUserIsAdminOf for emailAddr ----------------------");
-    System.out.println("Checking: clobsrv@us.ibm.com (an id that should work)");
-    Vector<String> userIsAdminOf = ugObj.getGroupsUserIsAdminOf("clobsrv@us.ibm.com");
+    System.out.println("Checking: " + email2Check + " (an id that should work)");
+    Vector<String> userIsAdminOf = ugObj.getGroupsUserIsAdminOf(email2Check);
     if (userIsAdminOf != null) {
       for (String aGrp : userIsAdminOf) {
         System.out.println("Admin of: " + aGrp);

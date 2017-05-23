@@ -3,6 +3,8 @@ import java.util.Vector;
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.*;
 
+import com.ibm.bluegroup.spd.LdapHelper;
+import com.ibm.bluegroup.spd.UserGroups;
 import com.ibm.bluepages.slaphapi.LDAPEntry;
 
 import java.util.*;
@@ -19,7 +21,8 @@ public class TestGroups {
     boolean getGroupsAdminOf = false;
     boolean getGroupsOwnerOf = false;
     boolean getGroupMembers = false;
-        
+    
+    getGroupsIn = getGroupsAdminOf = getGroupsOwnerOf = getGroupMembers = true;
     if (args.length < 1) {
       System.err.println("Pass email address to get groups for");
       return;
