@@ -1,8 +1,3 @@
-import com.ibm.bluegroup.spd.GetGroupOwnerAndMembersByGroupName;
-import com.ibm.bluegroup.spd.GetGroupsOwnedByEmail;
-import com.ibm.bluegroup.spd.GroupMemberBean;
-import com.ibm.bluegroup.spd.GroupOwnerBean;
-
 import java.util.ArrayList;
 
 /**

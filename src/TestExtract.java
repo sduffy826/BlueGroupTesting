@@ -8,7 +8,6 @@ import java.util.Vector;
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.*;
 
-import com.ibm.bluegroup.spd.UserGroups;
 import com.ibm.bluepages.slaphapi.LDAPEntry;
 
 import java.util.*;

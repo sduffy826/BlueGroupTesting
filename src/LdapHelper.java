@@ -1,4 +1,4 @@
-package com.ibm.bluegroup.spd;
+
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.*;
 

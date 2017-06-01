@@ -1,10 +1,9 @@
+import java.util.ArrayList;
 import java.util.Vector;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 
-import com.ibm.bluegroup.spd.GroupMemberBean;
-import com.ibm.bluegroup.spd.UserGroups;
 
 /**
  * This is another test class gets the groups and the members of all the groups 
@@ -22,10 +21,34 @@ public class TestGetGroupsOwnedByAndMembersForEmail {
    * The mainline, should pass in the email address on invocation
    */
   public static void main(String[] args) {
+    boolean isFirst;
     if (args.length < 1) {
       System.err.println("Pass email address to get groups for");
       return;
     }
+    
+    // Get all the groups for this email
+    GetGroupsOwnedByEmail getGroupsOwnedByEmail = new GetGroupsOwnedByEmail();
+    ArrayList<GroupOwnerBean> getGroups = getGroupsOwnedByEmail.getGroups(args[0]);
+    
+    // Loop thru each of the groups
+    for (GroupOwnerBean groupOwnerBean : getGroups) {
+      System.out.println("New group: " + groupOwnerBean.getGroupName());
+      
+      // Get group owner and members 
+      GetGroupOwnerAndMembersByGroupName grpNameDetail = new GetGroupOwnerAndMembersByGroupName();
+      
+      // Output owner and members
+      isFirst = true;
+      ArrayList<GroupMemberBean> groupMembers = grpNameDetail.getMembers(groupOwnerBean.getGroupName());
+      for (GroupMemberBean groupMemberBean : groupMembers) {
+        if (isFirst) System.out.println("  Owner:" + groupMemberBean.getOwnerEmail());
+        System.out.println("    " + groupMemberBean.getMemberEmail());
+        isFirst = false;
+      }
+    }
+        
+    /*
 
     // Create object, use flag to determine if tracing should be on
     UserGroups mUserGroups = new UserGroups(DEBUGCWA);
@@ -57,7 +80,7 @@ public class TestGetGroupsOwnedByAndMembersForEmail {
         }
       }
     }        
-
+    */
     if (DEBUGIT) System.out.println("Done");
   }
 }
